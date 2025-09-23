@@ -19,17 +19,17 @@ ECS는 AWS에서 제공하는 컨테이너 오케스트레이션 서비스입니
 
 Docker 컨테이너를 쉽게 배포하고 관리할 수 있게 해줍니다. 클러스터, 작업 정의, 서비스 등의 개념을 통해 컨테이너화된 애플리케이션을 확장성 있게 운영할 수 있습니다. ECS를 배포하기 위해서는 다음과 같은 순서로 진행합니다.
 
-1. 먼저 클러스터를 생성합니다. 클러스터는 컨테이너가 실행되는 환경의 논리적인 그룹입니다.
+1. 먼저 클러스터를 생성합니다. 클러스터는 컨테이너가 실행되는 환경의 논리적인 그룹입니다.  
 2. 작업 정의(Task Definition)를 생성합니다. 작업 정의는 애플리케이션을 구성하는 컨테이너에 대한 상세 설명서 입니다. 컨테이너에 올릴 이미지, 할당할 자원 크기, 로깅 설정, 환경 변수, 볼륨 마운트 등 컨테이너 실행에 필요한 모든 설정을 정의합니다. 작업 정의가 잘 구성되어야 컨테이너가 안정적으로 실행될 수 있습니다.
 3. 서비스를 생성합니다. 서비스는 작업 정의에 지정된 수의 작업 인스턴스를 클러스터에서 실행하고 유지하고 관리하는 역할을 합니다. 서비스가 올라가야 컨테이너가 실행되는 것입니다.
 
 ## Github Actions로 빌드 자동화
 
-AWS ECS에 배포하기 위해서는 컨테이너에 사용될 이미지가 필요합니다. 이미지는 AWS ECR을 이용해서 저장하고 관리할 수 있습니다.
+AWS ECS에 배포하기 위해서는 컨테이너에 사용될 이미지가 필요합니다. 이미지는 AWS ECR을 이용해서 저장하고 관리할 수 있습니다. 
 
 [https://chaechae.life/blog/github-actions-image-build-push](https://chaechae.life/blog/github-actions-image-build-push)
 
-Market Place에 많은 Action들이 있는데 Docker 이미지를 빌드하고 푸시해주는 Action도 있습니다. 그것들 중 하나를 선택해서 가져와서 쓸 수 있습니다.
+Market Place에 많은 Action들이 있는데 Docker 이미지를 빌드하고 푸시해주는 Action도 있습니다. 그것들 중 하나를 선택해서 가져와서 쓸 수 있습니다. 
 
 빌드를 Github Actions에서 한다는 것은 Github에 올라와 있는 코드로 빌드를 한다는 것입니다. 환경변수는 Github에 올리지 않기 때문에 빌드를 실행하기 전에 환경변수부터 만들어줘야 합니다. 이것도 Action을 이용해서 가능합니다.
 
@@ -46,7 +46,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      # 환경 변수를 생성합니다. Secrets를 이용해서
+      # 환경 변수를 생성합니다. Secrets를 이용해서 
       - name: Make envfile
         uses: SpicyPizza/create-envfile@v2.0
         with:
@@ -84,64 +84,67 @@ jobs:
 ECS를 배포할 때는 서비스만 갈아 끼워주면 됩니다. 서비스는 작업 정의로 실행합니다. 순서를 생각해보면 AWS에 로그인하고 작업 정의 만들고 서비스를 실행하면 됩니다. aws-actions에서 제공하는 Actions를 이용해서 이것들을 모두 다 할 수 있습니다.
 
 ```yaml
-deploy:
-  name: Deploy
-  runs-on: ubuntu-latest
-  needs: build
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: build
 
-  steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    # Deploy할 수 있는 역할을 부여받습니다.
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/GitHubActions-Deploy-Role
-        aws-region: ${{ env.AWS_REGION }}
-    # 작업 정의 작성
-    - name: Fill in the new image ID in the Amazon ECS task definition
-      id: task-def
-      uses: aws-actions/amazon-ecs-render-task-definition@v1
-      with:
-        task-definition: ${{ env.ECS_TASK_DEFINITION }}
-        container-name: ${{ env.CONTAINER_NAME }}
-        image: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
-    # 작업 정의를 기반으로 실
-    - name: Deploy Amazon ECS task definition
-      uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-      with:
-        task-definition: ${{ steps.task-def.outputs.task-definition }}
-        service: ${{ env.ECS_SERVICE }}
-        cluster: ${{ env.ECS_CLUSTER }}
-        wait-for-service-stability: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      # Deploy할 수 있는 역할을 부여받습니다. 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/GitHubActions-Deploy-Role
+          aws-region: ${{ env.AWS_REGION }}
+      # 작업 정의 작성
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ env.ECS_TASK_DEFINITION }}
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+      # 작업 정의를 기반으로 실
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
 ```
 
 [https://github.com/aws-actions](https://github.com/aws-actions)
 
-먼저 GitHubActions-Deploy-Role을 IAM에서 만들어줘야 합니다. IAM에서 역할을 생성하기 전에 ECS배포할 수 있도록 정책을 먼저 생성해줍니다.
+먼저 GitHubActions-Deploy-Role을 IAM에서 만들어줘야 합니다. IAM에서 역할을 생성하기 전에 ECS배포할 수 있도록 정책을 먼저 생성해줍니다. 
 
 ```json
 {
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "AllowECSServiceUpdate",
-      "Effect": "Allow",
-      "Action": [
-        "ecs:RegisterTaskDefinition",
-        "ecs:UpdateService",
-        "ecs:DescribeServices"
-      ],
-      "Resource": "*"
-    },
-    {
-      "Sid": "AllowPassRoleToECSService",
-      "Effect": "Allow",
-      "Action": "iam:PassRole",
-      "Resource": ["ECS task-execution-role ARN 입력", "ECS task-role ARN 입력"]
-    }
-  ]
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowECSServiceUpdate",
+            "Effect": "Allow",
+            "Action": [
+                "ecs:RegisterTaskDefinition",
+                "ecs:UpdateService",
+                "ecs:DescribeServices"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "AllowPassRoleToECSService",
+            "Effect": "Allow",
+            "Action": "iam:PassRole",
+            "Resource": [
+                "ECS task-execution-role ARN 입력",
+                "ECS task-role ARN 입력"
+            ]
+        }
+    ]
 }
 ```
 

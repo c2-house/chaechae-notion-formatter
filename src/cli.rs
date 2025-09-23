@@ -11,9 +11,9 @@ pub struct Cli {
     #[arg(required = true)]
     pub file_path: String,
 
-    #[arg(long, default_value = "../posts/")]
+    #[arg(long, default_value = "/Users/minchae/dev/blog/content/posts/")]
     pub posts_dir: String,
 
-    #[arg(long, default_value = "../public/images/blog/")]
+    #[arg(long, default_value = "/Users/minchae/dev/blog/public/images/blog/")]
     pub images_dir: String,
 }

@@ -5,6 +5,8 @@ mod cli;
 mod config;
 mod error;
 mod fs_handler;
+mod image_handler;
+mod processor;
 mod transformer;
 
 fn main() {
@@ -15,11 +17,8 @@ fn main() {
         process::exit(1);
     });
 
-    let content = fs_handler::read_file(&config.source_file_path).unwrap_or_else(|err| {
-        eprintln!("Application error: {}", err);
+    if let Err(e) = processor::run(&config) {
+        eprintln!("Application error: {}", e);
         process::exit(1);
-    });
-
-    let transformed_text = transformer::transform_text(&content);
-    println!("{}", transformed_text);
+    }
 }
