@@ -2,27 +2,35 @@
 
 const { spawn } = require('child_process');
 const path = require('path');
+const fs = require('fs');
 
 function getBinaryPath() {
-    const platform = process.platform;
+    const platform = process.platform; 
     const arch = process.arch;
 
-    let binaryName;
-
-    if (platform === 'win32') {
-        binaryName = 'notion-formatter.exe';
+    let target;
+    if (platform === 'darwin' && arch === 'arm64') {
+        target = 'aarch64-apple-darwin';
+    } else if (platform === 'darwin' && arch === 'x64') {
+        target = 'x86_64-apple-darwin';
+    } else if (platform === 'linux' && arch === 'x64') {
+        target = 'x86_64-unknown-linux-gnu';
+    } else if (platform === 'win32' && arch === 'x64') {
+        target = 'x86_64-pc-windows-msvc';
     } else {
-        binaryName = 'notion-formatter';
+        console.error(`Unsupported platform: ${platform}-${arch}`);
+        process.exit(1);
+    }
+    
+    const binaryName = platform === 'win32' ? 'notion-formatter.exe' : 'notion-formatter';
+    const binaryPath = path.join(__dirname, 'bin', target, binaryName);
+
+    if (!fs.existsSync(binaryPath)) {
+        console.error(`Could not find binary for your platform at: ${binaryPath}`);
+        console.error('Please report this issue on GitHub.');
+        process.exit(1);
     }
 
-    // In a real package, you'd have logic to select the correct binary
-    // based on platform and architecture. For local testing, we'll
-    // just point to the target/release directory.
-    const binaryPath = path.join(__dirname, 'target', 'release', binaryName);
-    
-    // For a real package, you might use a structure like this:
-    // const binaryPath = path.join(__dirname, 'bin', `${platform}-${arch}`, binaryName);
-    
     return binaryPath;
 }
 
@@ -33,12 +41,11 @@ const child = spawn(binary, args, { stdio: 'inherit' });
 
 child.on('close', (code) => {
     if (code !== 0) {
-        console.error(`notion-formatter exited with code ${code}`);
-        process.exit(1);
+        process.exit(code);
     }
 });
 
 child.on('error', (err) => {
-    console.error('Failed to start notion-formatter:', err);
+    console.error('Failed to start the notion-formatter binary:', err);
     process.exit(1);
 });

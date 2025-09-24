@@ -1,7 +1,7 @@
 {
   "name": "notion-formatter",
   "version": "0.1.0",
-  "description": "Notion으로 작성한 블로그 포스트를 지정된 MDX 형식으로 자동 변환하는 고성능 CLI 도구",
+  "description": "Notion으로 작성한 블로그 포스트를 지정된 MDX 형식으로 자동 변환하기 귀찮아서 만든 CLI 도구 for chaechae.life",
   "main": "cli.js",
   "bin": {
     "nf": "./cli.js"
@@ -9,6 +9,15 @@
   "files": [
     "cli.js",
     "bin/"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/사용자이름/저장소이름.git"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
   ],
   "keywords": [
     "notion",
