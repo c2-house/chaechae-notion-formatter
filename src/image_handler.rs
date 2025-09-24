@@ -1,3 +1,5 @@
+// image_handler.rs
+
 use crate::config::Config;
 use crate::error::NotionFormatterError;
 use image::{self, DynamicImage};
@@ -11,42 +13,33 @@ lazy_static! {
     static ref IMAGE_REGEX: Regex = Regex::new(r#"<Image alt="(.*?)" src="(.*?)" />"#).unwrap();
 }
 
-// 반환 타입을 튜플로 변경: (업데이트된 텍스트, 원본 이미지 폴더 이름)
 pub fn process_images_and_update_text(
     config: &Config,
     text: &str,
-) -> Result<(String, Option<String>), NotionFormatterError> {
+) -> Result<String, NotionFormatterError> {
     let mut image_counter = 1;
     let mut updated_text = text.to_string();
-    let mut source_image_dir_name: Option<String> = None; // 원본 이미지 폴더 이름을 저장할 변수
 
     let target_images_dir = config.images_dir.join(&config.slug);
     if !target_images_dir.exists() {
-        fs::create_dir_all(&target_images_dir).map_err(|e| {
-            NotionFormatterError::DirCreateError(format!(
-                "Failed to create target image directory {}: {}",
-                target_images_dir.display(),
-                e
-            ))
-        })?;
+        fs::create_dir_all(&target_images_dir)?;
     }
 
     for caps in IMAGE_REGEX.captures_iter(text) {
         let alt = &caps[1];
         let original_src = &caps[2];
 
-        let decoded_src = decode(original_src)
-            .map_err(|e| NotionFormatterError::InvalidPath(e.to_string()))?
-            .to_string();
+        let decoded_src = decode(original_src)?.to_string();
 
-        // 💡 중요: Notion이 만든 원본 폴더 이름을 캡처합니다.
-        if source_image_dir_name.is_none() {
-            if let Some(parent) = Path::new(&decoded_src).parent().and_then(|p| p.to_str()) {
-                source_image_dir_name = Some(parent.to_string());
-            }
-        }
+        let source_filename = Path::new(&decoded_src)
+            .file_name()
+            .and_then(|s| s.to_str())
+            .ok_or_else(|| {
+                NotionFormatterError::InvalidPath(format!("Invalid image src: {}", decoded_src))
+            })?;
 
-        let source_image_path = config.source_dir_path.join(&decoded_src);
+        // 💡 중요: Config에 명시된 소스 이미지 폴더와 파일 이름을 조합
+        let source_image_path = config.source_images_dir.join(source_filename);
 
         if !source_image_path.exists() {
             println!(
@@ -56,34 +49,21 @@ pub fn process_images_and_update_text(
             continue;
         }
 
-        // --- (이하 이미지 리사이즈 및 저장 로직은 동일) ---
-        let extension = source_image_path
+        let extension = Path::new(source_filename)
             .extension()
             .and_then(|s| s.to_str())
             .unwrap_or("jpg");
 
+        // 새 파일 이름 (예: "01.png")
         let new_filename = format!("{:02}.{}", image_counter, extension);
         let target_image_path = target_images_dir.join(&new_filename);
 
-        let img = image::open(&source_image_path).map_err(|e| {
-            NotionFormatterError::FileReadError(format!(
-                "Failed to open image {}: {}",
-                source_image_path.display(),
-                e
-            ))
-        })?;
-
+        let img = image::open(&source_image_path)?;
         let resized_img = resize_image(img, 900);
-        resized_img.save(&target_image_path).map_err(|e| {
-            NotionFormatterError::FileWriteError(format!(
-                "Failed to save image {}: {}",
-                target_image_path.display(),
-                e
-            ))
-        })?;
-        // --- (여기까지 동일) ---
+        resized_img.save(&target_image_path)?;
 
-        // 이 부분은 이미 요구사항대로 잘 동작하고 있습니다.
+        // 💡 최종 src 경로 수정 (요구사항 반영)
+        // 결과: "/images/blog/test/01.png"
         let new_src = Path::new("/images/blog")
             .join(&config.slug)
             .join(&new_filename)
@@ -92,13 +72,14 @@ pub fn process_images_and_update_text(
             .to_string();
 
         let original_tag = &caps[0];
+        // alt 값은 원본 파일 이름이 아닌, 태그에 있던 alt 값을 그대로 사용
         let new_tag = format!("<Image alt=\"{}\" src=\"{}\" />", alt, new_src);
         updated_text = updated_text.replace(original_tag, &new_tag);
 
         image_counter += 1;
     }
 
-    Ok((updated_text, source_image_dir_name))
+    Ok(updated_text)
 }
 
 fn resize_image(img: DynamicImage, width: u32) -> DynamicImage {
