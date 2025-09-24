@@ -86,7 +86,10 @@ pub fn extract_frontmatter(text: &str) -> (String, String) {
             &frontmatter_map
                 .into_iter()
                 .map(|(k, v)| {
+                    // 값의 양 끝에 있을 수 있는 따옴표를 먼저 제거합니다.
                     let trimmed_v = v.trim_matches('"');
+
+                    // 'tags' 키는 특별히 배열 형식으로 처리합니다.
                     if k == "tags" {
                         if trimmed_v.starts_with('[') && trimmed_v.ends_with(']') {
                             return format!("{}: {}", k, trimmed_v);
@@ -95,14 +98,8 @@ pub fn extract_frontmatter(text: &str) -> (String, String) {
                         }
                     }
 
-                    if (trimmed_v.starts_with('[') && trimmed_v.ends_with(']'))
-                        || trimmed_v.parse::<i64>().is_ok()
-                        || trimmed_v.parse::<f64>().is_ok()
-                    {
-                        format!("{}: {}", k, trimmed_v)
-                    } else {
-                        format!("{}: \"{}\"", k, trimmed_v.replace('"', "\\\""))
-                    }
+                    // 그 외 모든 키는 값을 그대로 출력합니다.
+                    format!("{}: {}", k, trimmed_v)
                 })
                 .collect::<Vec<_>>()
                 .join("\n"),
