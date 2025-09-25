@@ -3,7 +3,6 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum NotionFormatterError {
-    // --- 기존에 사용하시던 에러 종류들 (그대로 유지) ---
     #[error("File not found: {0}")]
     FileNotFound(String),
     #[error("Failed to read file: {0}")]

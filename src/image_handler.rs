@@ -1,5 +1,3 @@
-// image_handler.rs
-
 use crate::config::Config;
 use crate::error::NotionFormatterError;
 use image::{self, DynamicImage};
@@ -38,7 +36,6 @@ pub fn process_images_and_update_text(
                 NotionFormatterError::InvalidPath(format!("Invalid image src: {}", decoded_src))
             })?;
 
-        // 💡 중요: Config에 명시된 소스 이미지 폴더와 파일 이름을 조합
         let source_image_path = config.source_images_dir.join(source_filename);
 
         if !source_image_path.exists() {
@@ -54,7 +51,6 @@ pub fn process_images_and_update_text(
             .and_then(|s| s.to_str())
             .unwrap_or("jpg");
 
-        // 새 파일 이름 (예: "01.png")
         let new_filename = format!("{:02}.{}", image_counter, extension);
         let target_image_path = target_images_dir.join(&new_filename);
 
@@ -62,8 +58,6 @@ pub fn process_images_and_update_text(
         let resized_img = resize_image(img, 900);
         resized_img.save(&target_image_path)?;
 
-        // 💡 최종 src 경로 수정 (요구사항 반영)
-        // 결과: "/images/blog/test/01.png"
         let new_src = Path::new("/images/blog")
             .join(&config.slug)
             .join(&new_filename)
@@ -72,7 +66,6 @@ pub fn process_images_and_update_text(
             .to_string();
 
         let original_tag = &caps[0];
-        // alt 값은 원본 파일 이름이 아닌, 태그에 있던 alt 값을 그대로 사용
         let new_tag = format!("<Image alt=\"{}\" src=\"{}\" />", alt, new_src);
         updated_text = updated_text.replace(original_tag, &new_tag);
 

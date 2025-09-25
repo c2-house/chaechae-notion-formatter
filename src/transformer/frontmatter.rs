@@ -11,12 +11,11 @@ pub fn extract_frontmatter(text: &str) -> (String, String) {
     let mut frontmatter_map = BTreeMap::new();
     let mut lines = text.lines().peekable();
 
-    // 1. --- 로 시작하는 Frontmatter 블록이 있는지 확인하고 파싱
     if lines.peek().map_or(false, |line| line.starts_with("---")) {
-        lines.next(); // --- 소모
+        lines.next();
         while let Some(line) = lines.next() {
             if line.starts_with("---") {
-                break; // Frontmatter 블록 끝
+                break;
             }
             if let Some(caps) = METADATA_REGEX.captures(line) {
                 frontmatter_map.insert(
@@ -27,12 +26,9 @@ pub fn extract_frontmatter(text: &str) -> (String, String) {
         }
     }
 
-    // 2. 남은 라인들을 수집하여 추가 파싱 준비
     let mut remaining_lines = lines.collect::<Vec<&str>>().into_iter().peekable();
 
-    // 3. H1 제목 처리 (Frontmatter에 title이 없는 경우에만)
     if !frontmatter_map.contains_key("title") {
-        // H1 앞에 빈 줄이 있을 수 있으므로 건너뜁니다.
         while let Some(line) = remaining_lines.peek() {
             if line.trim().is_empty() {
                 remaining_lines.next();
@@ -48,7 +44,6 @@ pub fn extract_frontmatter(text: &str) -> (String, String) {
         }
     }
 
-    // 4. 메타데이터 블록 시작 전 빈 줄 건너뛰기
     while let Some(line) = remaining_lines.peek() {
         if line.trim().is_empty() {
             remaining_lines.next();
@@ -57,7 +52,6 @@ pub fn extract_frontmatter(text: &str) -> (String, String) {
         }
     }
 
-    // 5. 추가 메타데이터 파싱 (기존에 없던 키만 추가)
     while let Some(line) = remaining_lines.peek() {
         if line.trim().is_empty() {
             remaining_lines.next(); // 본문과 메타데이터를 구분하는 빈 줄 소모
@@ -70,14 +64,12 @@ pub fn extract_frontmatter(text: &str) -> (String, String) {
             }
             remaining_lines.next();
         } else {
-            break; // 메타데이터 형식이 아니면 중단
+            break;
         }
     }
 
-    // 6. 최종 본문 내용 수집
     let final_content_lines: Vec<&str> = remaining_lines.collect();
 
-    // 7. Frontmatter 문자열 생성
     let frontmatter = if frontmatter_map.is_empty() {
         String::new()
     } else {
@@ -97,8 +89,6 @@ pub fn extract_frontmatter(text: &str) -> (String, String) {
                             return format!("{}: [{}]", k, trimmed_v);
                         }
                     }
-
-                    // 그 외 모든 키는 값을 그대로 출력합니다.
                     format!("{}: {}", k, trimmed_v)
                 })
                 .collect::<Vec<_>>()
