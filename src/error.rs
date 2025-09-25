@@ -3,8 +3,6 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum NotionFormatterError {
-    #[error("File not found: {0}")]
-    FileNotFound(String),
     #[error("Failed to read file: {0}")]
     FileReadError(String),
     #[error("Failed to write file: {0}")]

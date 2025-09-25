@@ -13,7 +13,7 @@ pub fn run(config: &Config) -> Result<(), NotionFormatterError> {
     }
     fs_handler::write_file(&target_mdx_path, &final_text)?;
 
-    fs_handler::delete_file_and_dir(&config.source_file_path, &config.source_images_dir)?;
+    fs_handler::delete_file_and_dir(&config.source_file_path, &config.source_dir_path)?;
 
     println!(
         "✅ Successfully formatted {}",
