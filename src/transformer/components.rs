@@ -17,7 +17,7 @@ pub fn transform_components(content: &str) -> String {
         format!("<Callout>\n{}\n</Callout>", &caps[1].trim())
     });
 
-    let content = STANDALONE_LINK_REGEX.replace_all(&content, "<Link href=\"$1\" />");
+    let content = STANDALONE_LINK_REGEX.replace_all(&content, "<Link url=\"$1\" />");
 
     let content = MARKDOWN_LINK_REGEX.replace_all(&content, |caps: &Captures| {
         if caps[1] == caps[2] {
