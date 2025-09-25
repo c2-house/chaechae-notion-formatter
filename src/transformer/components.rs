@@ -5,7 +5,8 @@ lazy_static! {
     static ref TOC_REGEX: Regex = Regex::new(r"(?i)###\s*(목차|table of contents)").unwrap();
     static ref CALLOUT_REGEX: Regex = Regex::new(r"<aside>\n?([\s\S]*?)\n?</aside>").unwrap();
     static ref STANDALONE_LINK_REGEX: Regex = Regex::new(r"(?m)^((https?://[^\s]+))$").unwrap();
-    static ref MARKDOWN_LINK_REGEX: Regex = Regex::new(r"\[(https?://.*?)\]\((https?://.*?)\)").unwrap();
+    static ref MARKDOWN_LINK_REGEX: Regex =
+        Regex::new(r"\[(https?://.*?)\]\((https?://.*?)\)").unwrap();
     static ref IMAGE_REGEX: Regex = Regex::new(r"!\[(.*?)\]\((.*?)\)").unwrap();
 }
 
@@ -20,7 +21,7 @@ pub fn transform_components(content: &str) -> String {
 
     let content = MARKDOWN_LINK_REGEX.replace_all(&content, |caps: &Captures| {
         if caps[1] == caps[2] {
-            format!("<Link href=\"{}\" />", &caps[1])
+            format!("<Link url=\"{}\" />", &caps[1])
         } else {
             caps[0].to_string()
         }
